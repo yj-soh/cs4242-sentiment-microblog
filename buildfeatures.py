@@ -5,6 +5,10 @@ import numpy as np
 from nltk.tag import pos_tag
 
 NEGATION = 'not_'
+ADVERB_TAGS = ['RB', 'RBR', 'RBS', 'WRB']
+NOUN_TAGS = ['NN', 'NNS', 'NNP', 'NNPS', 'PRP', 'WP']
+ADJECTIVE_TAGS = ['JJ', 'JJR', 'JJS']
+VERB_TAGS = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
 
 class SentimentScorer:
 
@@ -57,43 +61,59 @@ class SentimentScorer:
 class POSTagger:
 
     @staticmethod
-    def tag(words):
+    def tag(words): # returns count of each tag
+
+        def initialize_tag_count():
+            tag_count = {}
+            for tag in ADVERB_TAGS + NOUN_TAGS + VERB_TAGS + ADJECTIVE_TAGS:
+                tag_count[tag] = 0
+            tag_count['other'] = 0
+
+            return tag_count
+
         tagged_words = nltk.pos_tag(words)
-        result = list()
 
-        for tagged_word in tagged_words: # tagged_word = (word, tag)
-            result.append(tagged_word[0] + '/' + tagged_word[1])
+        tag_count = initialize_tag_count()
 
-        return result
+        for (word, tag) in tagged_words:
+            if (tag in ADVERB_TAGS + NOUN_TAGS + VERB_TAGS + ADJECTIVE_TAGS):
+                tag_count[tag] += 1
+            else:
+                tag_count['other'] += 1
+
+        return tag_count
 
 def get_feature_vectors(tweets):
     sentiment_scorer = SentimentScorer()
     sentiment_scores = np.zeros((len(tweets), 1))
 
     unigram_feature_dict = dict() # maps feature to first time it is seen
+    tag_count_features = list()
     count_features = 0
-
-    tagged_tweets = list()
 
     for index, tweet in enumerate(tweets):
         # put sentiment score in first column
         sentiment_scores[index, 0] = sentiment_scorer.get_sentiment_score(tweet)
-        tagged_tweet = POSTagger.tag(tweet)
+        tag_count = POSTagger.tag(tweet)
 
-        for word in tagged_tweet:
+        tag_count_list = []
+        for tag, count in tag_count.iteritems():
+            tag_count_list.append(count)
+
+        tag_count_features.append(tag_count_list) # add tag count as feature
+
+        for word in tweet:
             if (word not in unigram_feature_dict):
                 count_features += 1
                 unigram_feature_dict[word] = count_features - 1
 
-        tagged_tweets.append(tagged_tweet)
-
     unigram_feature_vectors = np.zeros((len(tweets), len(unigram_feature_dict)))
     
-    for index, tweet in enumerate(tagged_tweets):
+    for index, tweet in enumerate(tweets):
         for word in tweet:
             unigram_feature_vectors[index, unigram_feature_dict[word]] = 1
 
-    return np.concatenate((sentiment_scores, unigram_feature_vectors), axis=1)
+    return np.concatenate((sentiment_scores, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
             
 if __name__ == '__main__':
     tweets = [['hello', 'there', 'happy', ':)', 'puppy'], ['hello', 'there', 'happy', ':)', 'puppy'], ['sup', 'not', 'a', 'tweet']]
