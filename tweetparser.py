@@ -131,11 +131,11 @@ def parse_tweets(f):
             else:
                 rtweet.append(result)
         rtweet = filter(None, rtweet) # remove empty strings
-        
+
         rtweet = handle_negation(rtweet)
         # rtweet = remove punctuation?
         
-        f(rtweet)
+        f('\t'.join(rtweet))
 
 if __name__ == '__main__':
     f = open('out.txt', 'w')
