@@ -16,6 +16,10 @@ NEGATION = 'not_'
 html_parser = HTMLParser.HTMLParser()
 lemmatizer = WordNetLemmatizer()
 stopwords = map(lambda s:str(s), stopwords.words('english'))
+escape_words = {
+    '\'': '&#39;',
+    '\"': '&quot;'
+}
 
 re_str_emoticon = r'''
     (?:
@@ -115,6 +119,11 @@ def handle_negation(words):
     
     return words
 
+def escape_special(str):
+    for c in escape_words:
+        str = str.replace(c, escape_words[c])
+    return str
+
 def parse_tweets(f):
     for tweet in reader.read(TWEETS_TO_READ):
         # markup normalization
@@ -133,6 +142,7 @@ def parse_tweets(f):
         rtweet = filter(None, rtweet) # remove empty strings
 
         rtweet = handle_negation(rtweet)
+        rtweet = map(escape_special, rtweet)
         # rtweet = remove punctuation?
         
         f('\t'.join(rtweet))
