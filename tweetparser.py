@@ -2,6 +2,7 @@ import HTMLParser
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+import pickle
 import re
 
 import reader
@@ -145,11 +146,23 @@ def parse_tweets(f):
         rtweet = map(escape_special, rtweet)
         # rtweet = remove punctuation?
         
-        f('\t'.join(rtweet))
+        f(rtweet)
 
 if __name__ == '__main__':
-    f = open('out.txt', 'w')
-    def write(text):
-        f.write(str(text) + '\n')
-    parse_tweets(write)
+    # toss everything into memory; should be fine due to data's size
+    text_arrs = []
+    def collect(text_arr):
+        text_arrs.append(text_arr)
+    parse_tweets(collect)
+
+    f = open('out.txt', 'wb')
+    pickle.dump(text_arrs, f, -1)
     f.close()
+    
+    # text_arrs format: [[word, ...], [word, ...], ...]
+    
+    ''' # Reading the file:
+    f = open('out.txt', rb')
+    text_arrs = pickle.load(f)
+    f.close()
+    '''
