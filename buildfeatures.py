@@ -1,6 +1,9 @@
 import nltk
 import csv
+import reader
 import numpy as np
+import os.path
+import pickle
 
 from nltk.tag import pos_tag
 
@@ -9,6 +12,11 @@ ADVERB_TAGS = ['RB', 'RBR', 'RBS', 'WRB']
 NOUN_TAGS = ['NN', 'NNS', 'NNP', 'NNPS', 'PRP', 'WP']
 ADJECTIVE_TAGS = ['JJ', 'JJR', 'JJS']
 VERB_TAGS = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
+
+UNIGRAM_FEATURES_FILE = 'data/generated/unigram_features.txt'
+TRAINING_TWEETS_FILE = 'data/generated/training_tweets.txt'
+DEVELOPMENT_TWEETS_FILE = 'data/generated/development_tweets.txt'
+TESTING_TWEETS_FILE = 'data/generated/testing_tweets.txt'
 
 class SentimentScorer:
 
@@ -39,6 +47,8 @@ class SentimentScorer:
             word = line.strip()
             self.pos_lexicon.add(word)
             self.neg_lexicon.add(NEGATION + word)
+
+        txt_file.close()
 
         # initialize emoji and emoticon lexicons
         self.emoji_lexicon = create_dictionary_from_csv('resources/emoji-lexicon.csv')
@@ -83,18 +93,28 @@ class POSTagger:
 
         return tag_count
 
-def get_feature_vectors(tweets):
+# unigram_feature_dict in this format: (key = word/feature, value = index of feature)
+def get_feature_vectors(tweets, unigram_feature_dict = dict()):
     sentiment_scorer = SentimentScorer()
     sentiment_scores = np.zeros((len(tweets), 1))
 
-    unigram_feature_dict = dict() # maps feature to first time it is seen
     tag_count_features = list()
     count_features = 0
 
+    if (len(unigram_feature_dict) == 0):
+        # process unigram features
+        for index, tweet in enumerate(tweets):
+            for word in tweet:
+                if (word not in unigram_feature_dict):
+                    count_features += 1
+                    unigram_feature_dict[word] = count_features - 1
+
+    unigram_feature_vectors = np.zeros((len(tweets), len(unigram_feature_dict)))
+    
     for index, tweet in enumerate(tweets):
         # put sentiment score in first column
         sentiment_scores[index, 0] = sentiment_scorer.get_sentiment_score(tweet)
-        tag_count = POSTagger.tag(tweet)
+        tag_count = POSTagger.tag(tweet) # SO SLOW!!!!
 
         tag_count_list = []
         for tag, count in tag_count.iteritems():
@@ -103,18 +123,29 @@ def get_feature_vectors(tweets):
         tag_count_features.append(tag_count_list) # add tag count as feature
 
         for word in tweet:
-            if (word not in unigram_feature_dict):
-                count_features += 1
-                unigram_feature_dict[word] = count_features - 1
+            if (word in unigram_feature_dict):
+                unigram_feature_vectors[index, unigram_feature_dict[word]] = 1 # term presence
 
-    unigram_feature_vectors = np.zeros((len(tweets), len(unigram_feature_dict)))
-    
-    for index, tweet in enumerate(tweets):
-        for word in tweet:
-            unigram_feature_vectors[index, unigram_feature_dict[word]] = 1
-
-    return np.concatenate((sentiment_scores, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
+    return unigram_feature_dict, np.concatenate((sentiment_scores, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
             
 if __name__ == '__main__':
-    tweets = [['hello', 'there', 'happy', ':)', 'puppy'], ['hello', 'there', 'happy', ':)', 'puppy'], ['sup', 'not', 'a', 'tweet']]
-    print get_feature_vectors(tweets)
+    # if features already processed, don't have to do it again
+    if os.path.exists(UNIGRAM_FEATURES_FILE):
+        unigram_features = pickle.load(open(UNIGRAM_FEATURES_FILE, 'rb'))
+    else:
+        unigram_features = dict()
+
+    # process training features
+    training_tweets = pickle.load(open(TRAINING_TWEETS_FILE, 'rb'))
+    unigram_features, training_data = get_feature_vectors(training_tweets, unigram_features)
+
+    if not os.path.exists(UNIGRAM_FEATURES_FILE):
+        # save unigram features processed
+        pickle.dump(unigram_features, open(UNIGRAM_FEATURES_FILE, 'wb'), -1)
+
+    np.savetxt('data/generated/training_data.csv', training_data, delimiter=',')
+
+    # process testing features
+    testing_tweets = pickle.load(open(TESTING_TWEETS_FILE, 'rb'))
+    _, testing_data = get_feature_vectors(testing_tweets, unigram_features)
+    np.savetxt('data/generated/testing_data.csv', testing_data, delimiter=',')
