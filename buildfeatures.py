@@ -70,8 +70,13 @@ class SentimentScorer:
 
 class POSTagger:
 
-    @staticmethod
-    def tag(words): # returns count of each tag
+    def __init__(self):
+        self.tagger = nltk.tag.perceptron.PerceptronTagger()
+
+    def tag(self, words): # returns count of each tag
+        def pos_tag(tokens):
+            tagset = None
+            return nltk.tag._pos_tag(tokens, tagset, self.tagger)
 
         def initialize_tag_count():
             tag_count = {}
@@ -81,7 +86,8 @@ class POSTagger:
 
             return tag_count
 
-        tagged_words = nltk.pos_tag(words)
+        tagged_words = pos_tag(words)
+        print tagged_words
 
         tag_count = initialize_tag_count()
 
@@ -95,6 +101,7 @@ class POSTagger:
 
 # unigram_feature_dict in this format: (key = word/feature, value = index of feature)
 def get_feature_vectors(tweets, unigram_feature_dict = dict()):
+    pos_tagger = POSTagger()
     sentiment_scorer = SentimentScorer()
     sentiment_scores = np.zeros((len(tweets), 1))
 
@@ -114,7 +121,7 @@ def get_feature_vectors(tweets, unigram_feature_dict = dict()):
     for index, tweet in enumerate(tweets):
         # put sentiment score in first column
         sentiment_scores[index, 0] = sentiment_scorer.get_sentiment_score(tweet)
-        tag_count = POSTagger.tag(tweet) # SO SLOW!!!!
+        tag_count = pos_tagger.tag(tweet)
 
         tag_count_list = []
         for tag, count in tag_count.iteritems():
