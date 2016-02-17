@@ -7,10 +7,20 @@ import re
 
 import reader
 
-TRAINING = 'data/training.csv'
-DEVELOPMENT = 'data/development.csv'
-TESTING = 'data/testing.csv'
-TWEETS_TO_READ = TRAINING
+FILES = {
+    'training': {
+        'in': 'data/training.csv',
+        'out': 'data/generated/training_tweets.txt'
+    },
+    'development': {
+        'in': 'data/development.csv',
+        'out': 'data/generated/development_weets.txt'
+    },
+    'testing': {
+        'in': 'data/testing.csv',
+        'out': 'data/generated/testing_tweets.txt'
+    }
+}
 
 NEGATION = 'not_'
 
@@ -125,8 +135,8 @@ def escape_special(str):
         str = str.replace(c, escape_words[c])
     return str
 
-def parse_tweets(f):
-    for tweet in reader.read(TWEETS_TO_READ):
+def parse_tweets(tweets_csv, f):
+    for tweet in reader.read(tweets_csv):
         # markup normalization
         tweet = html_parser.unescape(tweet)
         tweet = tweet.encode('utf8')
@@ -149,20 +159,25 @@ def parse_tweets(f):
         f(rtweet)
 
 if __name__ == '__main__':
-    # toss everything into memory; should be fine due to data's size
-    text_arrs = []
-    def collect(text_arr):
-        text_arrs.append(text_arr)
-    parse_tweets(collect)
-
-    f = open('out.txt', 'wb')
-    pickle.dump(text_arrs, f, -1)
-    f.close()
+    files = [FILES['training'], FILES['testing']]
     
-    # text_arrs format: [[word, ...], [word, ...], ...]
+    for type in files:
+        tweets_csv = type['in']
     
-    ''' # Reading the file:
-    f = open('out.txt', rb')
-    text_arrs = pickle.load(f)
-    f.close()
-    '''
+        # toss everything into memory; should be fine due to data's size
+        text_arrs = []
+        def collect(text_arr):
+            text_arrs.append(text_arr)
+        parse_tweets(tweets_csv, collect)
+        
+        f = open(type['out'], 'wb')
+        pickle.dump(text_arrs, f, -1)
+        f.close()
+        
+        # text_arrs format: [[word, ...], [word, ...], ...]
+        
+        ''' # Reading the file:
+        f = open('out.txt', rb')
+        text_arrs = pickle.load(f)
+        f.close()
+        '''
