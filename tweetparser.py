@@ -158,7 +158,7 @@ def parse_tweets(tweets_csv, f):
         
         f(rtweet)
 
-if __name__ == '__main__':
+def parse_all_files():
     files = [FILES['training'], FILES['testing']]
     
     for type in files:
@@ -173,7 +173,9 @@ if __name__ == '__main__':
         f = open(type['out'], 'wb')
         pickle.dump(text_arrs, f, -1)
         f.close()
-        
+
+if __name__ == '__main__':
+        parse_all_files()
         # text_arrs format: [[word, ...], [word, ...], ...]
         
         ''' # Reading the file:

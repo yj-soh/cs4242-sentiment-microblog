@@ -87,7 +87,6 @@ class POSTagger:
             return tag_count
 
         tagged_words = pos_tag(words)
-        print tagged_words
 
         tag_count = initialize_tag_count()
 
