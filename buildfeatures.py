@@ -98,14 +98,15 @@ class POSTagger:
             return tag_count
 
         tagged_words = pos_tag(words)
+        total_words = len(words)
 
         tag_count = initialize_tag_count()
 
         for (word, tag) in tagged_words:
             if (tag in ADVERB_TAGS + NOUN_TAGS + VERB_TAGS + ADJECTIVE_TAGS):
-                tag_count[tag] += 1
+                tag_count[tag] += (1.0 / total_words)
             else:
-                tag_count['other'] += 1
+                tag_count['other'] += (1.0 / total_words)
 
         return tag_count
 
@@ -146,23 +147,13 @@ def get_feature_vectors(tweets, unigram_feature_dict = dict()):
     return unigram_feature_dict, np.concatenate((sentiment_scores, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
             
 if __name__ == '__main__':
-    # if features already processed, don't have to do it again
-    if os.path.exists(UNIGRAM_FEATURES_FILE):
-        unigram_features = pickle.load(open(UNIGRAM_FEATURES_FILE, 'rb'))
-    else:
-        unigram_features = dict()
+    tweets = [
+        ['i', 'love', 'apple'], 
+        ['apple', 'is', 'my', 'love'], 
+        ['apple', 'is', 'not', 'not_my', 'not_love'], 
+        ['love'], 
+        ['hate', 'hate', 'hate', 'apple']
+    ]
+    _, data = get_feature_vectors(tweets)
 
-    # process training features
-    training_tweets = pickle.load(open(TRAINING_TWEETS_FILE, 'rb'))
-    unigram_features, training_data = get_feature_vectors(training_tweets, unigram_features)
-
-    if not os.path.exists(UNIGRAM_FEATURES_FILE):
-        # save unigram features processed
-        pickle.dump(unigram_features, open(UNIGRAM_FEATURES_FILE, 'wb'), -1)
-
-    np.savetxt('data/generated/training_data.csv', training_data, delimiter=',')
-
-    # process testing features
-    testing_tweets = pickle.load(open(TESTING_TWEETS_FILE, 'rb'))
-    _, testing_data = get_feature_vectors(testing_tweets, unigram_features)
-    np.savetxt('data/generated/testing_data.csv', testing_data, delimiter=',')
+    print data
