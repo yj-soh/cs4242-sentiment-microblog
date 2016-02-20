@@ -6,6 +6,7 @@ import os.path
 import pickle
 
 from nltk.tag import pos_tag
+from nltk.stem import WordNetLemmatizer
 
 NEGATION = 'not_'
 ADVERB_TAGS = ['RB', 'RBR', 'RBS', 'WRB']
@@ -32,6 +33,8 @@ class SentimentScorer:
 
             return dictionary
 
+        self.lemmatizer = WordNetLemmatizer()
+
         # initialize sentiment lexicons
         self.neg_lexicon = set()
         self.pos_lexicon = set()
@@ -39,12 +42,20 @@ class SentimentScorer:
         txt_file = open('data/lexicon/neg.txt', 'r')
         for line in txt_file:
             word = line.strip()
+            try:
+                word = self.lemmatizer.lemmatize(word)
+            except UnicodeDecodeError:
+                pass
             self.neg_lexicon.add(word)
             self.pos_lexicon.add(NEGATION + word) # add negation to other lexicon set
 
         txt_file = open('data/lexicon/pos.txt', 'r')
         for line in txt_file:
             word = line.strip()
+            try:
+                word = self.lemmatizer.lemmatize(word)
+            except UnicodeDecodeError:
+                pass
             self.pos_lexicon.add(word)
             self.neg_lexicon.add(NEGATION + word)
 
