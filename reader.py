@@ -14,6 +14,7 @@ def _read_csv(filename):
             yield row
 
 def read(csvfile):
-    return (json['text'] for json in jsons)
     files = (row[2] + '.json' for row in _read_csv(csvfile))
     jsons = (_read_json(TWEET_DIR + file) for file in files)
+    
+    return jsons

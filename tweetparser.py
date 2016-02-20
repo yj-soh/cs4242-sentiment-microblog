@@ -4,6 +4,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pickle
 import re
+from time import mktime, strptime
 
 import reader
 
@@ -23,6 +24,7 @@ FILES = {
 }
 
 NEGATION = 'not_'
+DATE_FMT = '%a %b %d %H:%M:%S +0000 %Y'
 
 html_parser = HTMLParser.HTMLParser()
 lemmatizer = WordNetLemmatizer()
@@ -137,28 +139,70 @@ def _escape_special(str):
         str = str.replace(c, escape_words[c])
     return str
 
-def parse_tweets(tweets_csv, f):
-    for tweet in reader.read(tweets_csv):
-        # markup normalization
-        tweet = html_parser.unescape(tweet)
-        tweet = tweet.encode('utf8')
-        
-        words = re_words.findall(tweet)
-        
-        rtweet = []
-        for word in words:
-            result = process_word(word)
-            if isinstance(result, list):
-                rtweet.extend(result)
-            else:
-                rtweet.append(result)
-        rtweet = filter(None, rtweet) # remove empty strings
+def _parse_text(tweet):
+    # markup normalization
+    tweet = html_parser.unescape(tweet)
+    tweet = tweet.encode('utf8')
+    
+    # split into unigrams
+    words = re_words.findall(tweet)
+    
+    # process each unigram
+    rtweet = []
+    for word in words:
+        rtweet.extend(_process_word(word))
+    
+    # remove empty strings
+    rtweet = filter(None, rtweet)
 
-        rtweet = handle_negation(rtweet)
-        rtweet = map(escape_special, rtweet)
-        # rtweet = remove punctuation?
+    # after-splitting operations
+    rtweet = _handle_negation(rtweet)
+    rtweet = map(_escape_special, rtweet)
+    # rtweet = remove punctuation?
+    
+    return rtweet
+
+def _parse_datetime(date_str):
+    return mktime(strptime(date_str, DATE_FMT))
+
+def _append_if_exists(src, dst, key):
+    try:
+        dst[key].append(src)
+    except:
+        pass
+
+def _extend_if_exists(src, src_key, dst, dst_key):
+    try:
+        dst[dst_key].extend(d[src_key] for d in src)
+    except KeyError:
+        pass
+
+def _parse_tweets(tweets_csv, f):
+    '''
+    format of each tweet: {
+      text: string, original text of tweet msg,
+      unigrams: string[], relevant bits of tweet msg,
+      datetime: float, created date of tweet in Unix time,
+      users: string[], user ids of relevant users
+    }
+    '''
+    for json in reader.read(tweets_csv):
+        tweet = {}
         
-        f(rtweet)
+        # text
+        tweet['text'] = json['text']
+        tweet['unigrams'] = _parse_text(json['text'])
+        
+        # datetime
+        tweet['datetime'] = _parse_datetime(json['created_at'])
+        
+        # user ids
+        tweet['users'] = []
+        _append_if_exists(json['user']['id_str'], tweet, 'users')
+        _extend_if_exists(json['entities']['user_mentions'], 'id_str', tweet, 'users')
+        _append_if_exists(json['in_reply_to_user_id_str'], tweet, 'users')
+        
+        f(tweet)
 
 def parse_all_files():
     files = [FILES['training'], FILES['testing']]
@@ -167,13 +211,13 @@ def parse_all_files():
         tweets_csv = type['in']
     
         # toss everything into memory; should be fine due to data's size
-        text_arrs = []
-        def collect(text_arr):
-            text_arrs.append(text_arr)
+        tweets = []
+        def collect(tweet):
+            tweets.append(tweet)
         _parse_tweets(tweets_csv, collect)
         
         f = open(type['out'], 'wb')
-        pickle.dump(text_arrs, f, -1)
+        pickle.dump(tweets, f, -1)
         f.close()
 
 if __name__ == '__main__':

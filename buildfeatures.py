@@ -112,6 +112,8 @@ class POSTagger:
 
 # unigram_feature_dict in this format: (key = word/feature, value = index of feature)
 def get_feature_vectors(tweets, unigram_feature_dict = dict()):
+    tweets = [t['unigrams'] for t in tweets] # change this?
+
     pos_tagger = POSTagger()
     sentiment_scorer = SentimentScorer()
     sentiment_scores = np.zeros((len(tweets), 1))
