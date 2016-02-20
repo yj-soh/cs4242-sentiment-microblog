@@ -80,14 +80,16 @@ re_repeat_char = re.compile(r'(.)\1+')
 re_negation = re.compile(re_str_negation, re.VERBOSE)
 re_clause_punctuation = re.compile('^[.:;!?]$')
 
-def process_word(word):
+def _process_word(word):
     # if is emoticon
     if re_emoticon.search(word):
-        return word
+        return [word]
     
+    # if is stopword
     if word in stopwords:
-        return ''
-
+        return ['']
+    
+    # else process word
     word = word.lower()
     word = re_repeat_char.sub(r'\1\1', word)
     # contractions
@@ -97,13 +99,13 @@ def process_word(word):
     except UnicodeDecodeError:
         pass
     
-    return word
+    return [word]
 
-def negate_range(words, start, end):
+def _negate_range(words, start, end):
     negation = map(lambda w: NEGATION + w, words[start:end])
     return words[:start] + negation + words[end:]
 
-def handle_negation(words):
+def _handle_negation(words):
     negations = []
     punctuations = []
     is_negation_next = True
@@ -126,11 +128,11 @@ def handle_negation(words):
     
     for negation_range in negation_ranges:
         start, end = negation_range
-        words = negate_range(words, start, end)
+        words = _negate_range(words, start, end)
     
     return words
 
-def escape_special(str):
+def _escape_special(str):
     for c in escape_words:
         str = str.replace(c, escape_words[c])
     return str
@@ -168,7 +170,7 @@ def parse_all_files():
         text_arrs = []
         def collect(text_arr):
             text_arrs.append(text_arr)
-        parse_tweets(tweets_csv, collect)
+        _parse_tweets(tweets_csv, collect)
         
         f = open(type['out'], 'wb')
         pickle.dump(text_arrs, f, -1)
