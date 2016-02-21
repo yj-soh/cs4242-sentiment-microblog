@@ -87,7 +87,7 @@ re_str_negation = r'''
         )$
     )
     |
-    n't'''
+    .*n't'''
 
 re_emoji = re.compile(re_str_emoji, re.UNICODE)
 re_emoticon = re.compile(re_str_emoticon, re.VERBOSE | re.I | re.UNICODE)
