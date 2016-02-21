@@ -28,7 +28,7 @@ class Classifier:
         # {'recall': 0.52133906999012491, 'precision': 0.74365097295907634, 'F1': 0.54587294497124295}
         # self.classifier = RandomForestClassifier()
 
-        # self.classifier = KNeighborsClassifier(20)
+        # self.classifier = KNeighborsClassifier(20) # lousy one
 
     def train(self, training_data, training_labels):
         self.classifier.fit(training_data, training_labels)

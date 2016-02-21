@@ -28,12 +28,13 @@ def read_labels(filename):
 
 class SentimentAnalyzer:
     def __init__(self):
+        self.parser_options = tweetparser.options
+        
         self.classifier = Classifier()
         if os.path.exists(CLASSIFIER_FILE):
             self.classifier.load_classifier(CLASSIFIER_FILE)
         else:
             self.retrain_classifier()
-        self.parser_options = tweetparser.options
 
     def retrain_classifier(self):
         print 'Parsing tweets...'

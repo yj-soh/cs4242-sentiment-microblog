@@ -112,11 +112,10 @@ class POSTagger:
 
 # unigram_feature_dict in this format: (key = word/feature, value = index of feature)
 def get_feature_vectors(tweets, unigram_feature_dict = dict()):
-    tweets = [t['unigrams'] for t in tweets] # change this?
-
     pos_tagger = POSTagger()
     sentiment_scorer = SentimentScorer()
     sentiment_scores = np.zeros((len(tweets), 1))
+    social_features = np.zeros((len(tweets), 3)) # rt_count, fav_count, mention_count
 
     tag_count_features = list()
     count_features = 0
@@ -124,7 +123,7 @@ def get_feature_vectors(tweets, unigram_feature_dict = dict()):
     if (len(unigram_feature_dict) == 0):
         # process unigram features
         for index, tweet in enumerate(tweets):
-            for word in tweet:
+            for word in tweet['unigrams']:
                 if (word not in unigram_feature_dict):
                     count_features += 1
                     unigram_feature_dict[word] = count_features - 1
@@ -132,9 +131,16 @@ def get_feature_vectors(tweets, unigram_feature_dict = dict()):
     unigram_feature_vectors = np.zeros((len(tweets), len(unigram_feature_dict)))
     
     for index, tweet in enumerate(tweets):
+        tweet_unigrams = tweet['unigrams']
         # put sentiment score in first column
-        sentiment_scores[index, 0] = sentiment_scorer.get_sentiment_score(tweet)
-        tag_count = pos_tagger.tag(tweet)
+        sentiment_scores[index, 0] = sentiment_scorer.get_sentiment_score(tweet_unigrams)
+        # put date time in first column
+        # date_time_values[index, 0] = tweet['datetime']/60/60/24 # just get the day
+        social_features[index, 0] = tweet['rt_count']
+        social_features[index, 1] = tweet['fav_count']
+        social_features[index, 2] = len(tweet['users'])
+
+        tag_count = pos_tagger.tag(tweet_unigrams)
 
         tag_count_list = []
         for tag, count in tag_count.iteritems():
@@ -142,19 +148,19 @@ def get_feature_vectors(tweets, unigram_feature_dict = dict()):
 
         tag_count_features.append(tag_count_list) # add tag count as feature
 
-        for word in tweet:
+        for word in tweet_unigrams:
             if (word in unigram_feature_dict):
                 unigram_feature_vectors[index, unigram_feature_dict[word]] = 1 # term presence
 
-    return unigram_feature_dict, np.concatenate((sentiment_scores, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
+    return unigram_feature_dict, np.concatenate((social_features, sentiment_scores, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
             
 if __name__ == '__main__':
     tweets = [
-        ['i', 'love', 'apple'], 
-        ['apple', 'is', 'my', 'love'], 
-        ['apple', 'is', 'not', 'not_my', 'not_love'], 
-        ['love'], 
-        ['hate', 'hate', 'hate', 'apple']
+        {'fav_count': 2, 'rt_count': 3, 'unigrams': [':D', 'i', 'love', 'apple'], 'datetime': 1318693827.0}, 
+        {'fav_count': 2, 'rt_count': 3, 'unigrams': ['apple', 'is', 'my', 'love'], 'datetime': 1318693827.0}, 
+        {'fav_count': 2, 'rt_count': 3, 'unigrams': ['apple', 'is', 'not', 'not_my', 'not_love'], 'datetime': 1318693827.0}, 
+        {'fav_count': 2, 'rt_count': 3, 'unigrams': ['love'], 'datetime': 1318693827.0}, 
+        {'fav_count': 2, 'rt_count': 3, 'unigrams': ['hate', 'hate', 'hate', 'apple'], 'datetime': 1318693827.0}
     ]
     _, data = get_feature_vectors(tweets)
 
