@@ -220,7 +220,6 @@ def _parse_tweets(tweets_csv, f):
         # counts
         tweet['rt_count'] = json['retweet_count']
         tweet['fav_count'] = json['favorite_count']
-        print str(tweet['rt_count']) + ' ' + str(tweet['fav_count'])
         
         f(tweet)
 
