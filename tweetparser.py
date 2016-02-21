@@ -46,6 +46,8 @@ escape_words = {
     '\"': '&quot;'
 }
 
+re_str_emoji = u'\ud83c[\udf00-\udfff]|\ud83d[\udc00-\ude4f\ude80-\udeff]|[\u2600-\u26FF\u2700-\u27BF]+'
+
 re_str_emoticon = r'''
     (?:
       [<>]?
@@ -87,6 +89,7 @@ re_str_negation = r'''
     |
     n't'''
 
+re_emoji = re.compile(re_str_emoji, re.UNICODE)
 re_emoticon = re.compile(re_str_emoticon, re.VERBOSE | re.I | re.UNICODE)
 re_words = re.compile(re_str_emoticon + '|' + re_str_words, \
                       re.VERBOSE | re.I | re.UNICODE)
@@ -169,7 +172,17 @@ def _escape_special(str):
         str = str.replace(c, escape_words[c])
     return str
 
+def extract_emoji(text):
+    emoji = re_emoji.findall(text)
+    text = re_emoji.sub('', text)
+    
+    return text, emoji
+    
+
 def _parse_text(tweet):
+    # extract emoji
+    tweet, emoji = extract_emoji(tweet)
+    
     # markup normalization
     tweet = html_parser.unescape(tweet)
     tweet = tweet.encode('utf8')
@@ -179,6 +192,8 @@ def _parse_text(tweet):
     
     # process each unigram
     rtweet = []
+    rtweet.extend(emoji)
+    
     for word in words:
         rtweet.extend(_process_word(word))
     

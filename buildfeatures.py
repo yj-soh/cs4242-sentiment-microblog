@@ -62,7 +62,12 @@ class SentimentScorer:
         txt_file.close()
 
         # initialize emoji and emoticon lexicons
-        self.emoji_lexicon = create_dictionary_from_csv('resources/emoji-lexicon.csv')
+        self.emoji_lexicon = {}
+        for emoji, sentiment in create_dictionary_from_csv('resources/emoji-lexicon.csv').items():
+            try:
+                self.emoji_lexicon[emoji.decode('unicode_escape')] = sentiment
+            except UnicodeDecodeError:
+                self.emoji_lexicon[emoji] = sentiment
         self.emoticon_lexicon = create_dictionary_from_csv('resources/emoticon-lexicon.txt', delimiter='\t')
 
     def get_sentiment_score(self, words):
