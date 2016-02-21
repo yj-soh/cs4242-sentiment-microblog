@@ -196,7 +196,9 @@ def _parse_tweets(tweets_csv, f):
       text: string, original text of tweet msg,
       unigrams: string[], relevant bits of tweet msg,
       datetime: float, created date of tweet in Unix time,
-      users: string[], user ids of relevant users
+      users: string[], user ids of relevant users,
+      rt_count: int, no. of times retweeted,
+      fav_count: int, no. of times favorited
     }
     '''
     for json in reader.read(tweets_csv):
@@ -214,6 +216,11 @@ def _parse_tweets(tweets_csv, f):
         _append_if_exists(json['user']['id_str'], tweet, 'users')
         _extend_if_exists(json['entities']['user_mentions'], 'id_str', tweet, 'users')
         _append_if_exists(json['in_reply_to_user_id_str'], tweet, 'users')
+        
+        # counts
+        tweet['rt_count'] = json['retweet_count']
+        tweet['fav_count'] = json['favorite_count']
+        print str(tweet['rt_count']) + ' ' + str(tweet['fav_count'])
         
         f(tweet)
 
