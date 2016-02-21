@@ -23,6 +23,14 @@ FILES = {
     }
 }
 
+options = {
+    'stopwords': True,
+    'force_lowercase': True,
+    'trim_repeat_char': True,
+    'lemma': True,
+    'negation': True,
+    'escape_special': True
+}
 NEGATION = 'not_'
 DATE_FMT = '%a %b %d %H:%M:%S +0000 %Y'
 
@@ -88,18 +96,21 @@ def _process_word(word):
         return [word]
     
     # if is stopword
-    if word in stopwords:
+    if options['stopwords'] and word in stopwords:
         return ['']
     
     # else process word
-    word = word.lower()
-    word = re_repeat_char.sub(r'\1\1', word)
+    if options['force_lowercase']:
+        word = word.lower()
+    if options['trim_repeat_char']:
+        word = re_repeat_char.sub(r'\1\1', word)
     # contractions
     # slang
-    try:
-        word = str(lemmatizer.lemmatize(word))
-    except UnicodeDecodeError:
-        pass
+    if options['lemma']:
+        try:
+            word = str(lemmatizer.lemmatize(word))
+        except UnicodeDecodeError:
+            pass
     
     return [word]
 
@@ -156,8 +167,10 @@ def _parse_text(tweet):
     rtweet = filter(None, rtweet)
 
     # after-splitting operations
-    rtweet = _handle_negation(rtweet)
-    rtweet = map(_escape_special, rtweet)
+    if options['negation']:
+        rtweet = _handle_negation(rtweet)
+    if options['escape_special']:
+        rtweet = map(_escape_special, rtweet)
     # rtweet = remove punctuation?
     
     return rtweet
@@ -204,8 +217,10 @@ def _parse_tweets(tweets_csv, f):
         
         f(tweet)
 
-def parse_all_files():
+def parse_all_files(new_options=options):
     files = [FILES['training'], FILES['testing']]
+    
+    options = new_options
     
     for type in files:
         tweets_csv = type['in']

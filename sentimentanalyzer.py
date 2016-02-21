@@ -33,10 +33,11 @@ class SentimentAnalyzer:
             self.classifier.load_classifier(CLASSIFIER_FILE)
         else:
             self.retrain_classifier()
+        self.parser_options = tweetparser.options
 
     def retrain_classifier(self):
         print 'Parsing tweets...'
-        tweetparser.parse_all_files()
+        tweetparser.parse_all_files(self.parser_options)
 
         print 'Building features...'
         # build features for training data
@@ -67,13 +68,30 @@ class SentimentAnalyzer:
         print 'Predicting labels...'
         print 'Results: ' + str(self.classifier.predict_testing_data(testing_data, testing_labels, RESULTS_FILE))
 
+    def adjust_parser(self):
+        length = len(self.parser_options)
+        option = 0
+        while not option == length + 1:
+            print 'Which parser switch do you want to flip?'
+            switches = {}
+
+            for i, (opt, val) in enumerate(self.parser_options.items()):
+                switches[i + 1] = opt
+                print str(i + 1) + '. ' + opt + ':' + (' ' * (24 - len(opt))) + str(val)
+            print str(length + 1) + '. Back to main menu'
+
+            option = input('Answer: ')
+            if option > 0 and option < length + 1:
+                opt = switches[option]
+                self.parser_options[opt] = not self.parser_options[opt]
+
 if __name__ == '__main__':
     print 'Loading classifier...'
     sentimentAnalyzer = SentimentAnalyzer()
 
     option = 0
-    while option != 4:
-        option = input('What do you want to do?\n1. Retrain Classifier\n2. Classify Test Tweets\n3. Classify Custom Tweets\n4. Goodbye\nAnswer: ')
+    while option != 5:
+        option = input('What do you want to do?\n1. Retrain Classifier\n2. Classify Test Tweets\n3. Adjust Parser Options\n4. Classify Custom Tweets\n5. Goodbye\nAnswer: ')
 
         if option == 1:
             print 'Please wait...'
@@ -83,3 +101,6 @@ if __name__ == '__main__':
             print 'Please wait...'
             sentimentAnalyzer.classify_test_tweets()
             print 'See labels at: ' + RESULTS_FILE
+        elif option == 3:
+            sentimentAnalyzer.adjust_parser()
+            print 'Parser options updated!'
