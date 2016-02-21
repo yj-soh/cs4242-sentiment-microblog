@@ -40,11 +40,11 @@ class Classifier:
         self.classifier = pickle.load(open(filename, 'rb'))
 
     # saves overall results in results_file. Returns [recall, precision, F1]
-    def predict_testing_data(self, testing_data, testing_labels, results_file):
+    def predict_testing_data(self, testing_tweets, testing_data, testing_labels, results_file):
         result_labels = self.classifier.predict(testing_data)
         csv_writer = csv.writer(open(results_file, 'wb'))
-        for label in result_labels:
-            csv_writer.writerow([label])
+        for index, label in enumerate(result_labels):
+            csv_writer.writerow([testing_tweets[index]['text'].encode('utf8'), label])
 
         precision = metrics.precision_score(testing_labels, result_labels, average='macro')
         recall = metrics.recall_score(testing_labels, result_labels, average='macro')
@@ -55,31 +55,3 @@ class Classifier:
     def predict(self, testing_data):
         result_labels = self.classifier.predict(testing_data)
         return result_labels
-
-
-if __name__ == '__main__':
-    def read_labels(filename):
-        labels = []
-        with open(filename) as csvfile:
-            reader = csv.reader(csvfile)
-            reader.next() # skip header
-            for row in reader:
-                labels.append(row[1])
-
-        return labels
-
-    classifier = Classifier()
-
-    # if classifier already trained and loaded
-    if os.path.exists(CLASSIFIER_FILE):
-        classifier.load_classifier(CLASSIFIER_FILE)
-    else:
-        training_data = np.loadtxt(TRAINING_DATA_FILE, delimiter=',')
-        training_labels = read_labels(TRAINING)
-        classifier.train(training_data, training_labels)
-
-    testing_data = np.loadtxt(TESTING_DATA_FILE, delimiter=',')
-    testing_labels = read_labels(TESTING)
-    print classifier.predict_testing_data(testing_data, testing_labels, RESULTS_FILE)
-
-    classifier.save_classifier(CLASSIFIER_FILE)

@@ -29,7 +29,7 @@ def read_labels(filename):
 class SentimentAnalyzer:
     def __init__(self):
         self.parser_options = tweetparser.options
-        
+
         self.classifier = Classifier()
         if os.path.exists(CLASSIFIER_FILE):
             self.classifier.load_classifier(CLASSIFIER_FILE)
@@ -63,11 +63,12 @@ class SentimentAnalyzer:
         self.classifier.save_classifier(CLASSIFIER_FILE)
 
     def classify_test_tweets(self):
+        testing_tweets = pickle.load(open(TESTING_TWEETS, 'rb'))
         testing_data = np.loadtxt(TESTING_DATA_FILE, delimiter=',')
         testing_labels = read_labels(TESTING)
 
         print 'Predicting labels...'
-        print 'Results: ' + str(self.classifier.predict_testing_data(testing_data, testing_labels, RESULTS_FILE))
+        print 'Results: ' + str(self.classifier.predict_testing_data(testing_tweets, testing_data, testing_labels, RESULTS_FILE))
 
     def adjust_parser(self):
         length = len(self.parser_options)
