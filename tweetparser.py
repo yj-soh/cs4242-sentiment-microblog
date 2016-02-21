@@ -29,7 +29,8 @@ options = {
     'trim_repeat_char': True,
     'lemma': True,
     'negation': True,
-    'escape_special': True
+    'escape_special': True,
+    'replace_slang': True
 }
 NEGATION = 'not_'
 DATE_FMT = '%a %b %d %H:%M:%S +0000 %Y'
@@ -37,6 +38,8 @@ DATE_FMT = '%a %b %d %H:%M:%S +0000 %Y'
 html_parser = HTMLParser.HTMLParser()
 lemmatizer = WordNetLemmatizer()
 stopwords = map(lambda s:str(s), stopwords.words('english'))
+slang = reader.read_tsv_map('resources/noslang.csv')
+slang = {k:v.lower() for k, v in slang.items()}
 escape_words = {
     '\'': '&#39;',
     '\"': '&quot;'
@@ -90,22 +93,33 @@ re_repeat_char = re.compile(r'(.)\1+')
 re_negation = re.compile(re_str_negation, re.VERBOSE)
 re_clause_punctuation = re.compile('^[.:;!?]$')
 
+def _get_unigrams(text):
+    words = re_words.findall(text)
+    
+    if options['replace_slang']:
+        slang_words = [w for w in words if w in slang]
+        words = [w for w in words if w not in slang_words]
+        for s in slang_words:
+            words.extend(slang[s].split())
+    
+    return words
+
 def _process_word(word):
     # if is emoticon
     if re_emoticon.search(word):
         return [word]
     
+    ### lower-case operations below ###
+    if options['force_lowercase']:
+        word = word.lower()
+    
     # if is stopword
     if options['stopwords'] and word in stopwords:
         return ['']
     
-    # else process word
-    if options['force_lowercase']:
-        word = word.lower()
     if options['trim_repeat_char']:
         word = re_repeat_char.sub(r'\1\1', word)
-    # contractions
-    # slang
+    # todo: English contractions
     if options['lemma']:
         try:
             word = str(lemmatizer.lemmatize(word))
@@ -156,7 +170,7 @@ def _parse_text(tweet):
     tweet = tweet.encode('utf8')
     
     # split into unigrams
-    words = re_words.findall(tweet)
+    words = _get_unigrams(tweet)
     
     # process each unigram
     rtweet = []
