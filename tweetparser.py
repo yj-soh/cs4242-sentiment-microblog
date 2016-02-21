@@ -30,7 +30,8 @@ options = {
     'lemma': True,
     'negation': True,
     'escape_special': True,
-    'replace_slang': True
+    'replace_slang': True,
+    'no_hash_hashtags': True
 }
 NEGATION = 'not_'
 DATE_FMT = '%a %b %d %H:%M:%S +0000 %Y'
@@ -112,6 +113,10 @@ def _process_word(word):
     ### lower-case operations below ###
     if options['force_lowercase']:
         word = word.lower()
+    
+    if options['no_hash_hashtags']:
+        if word.startswith('#'):
+            word = word[1:]
     
     # if is stopword
     if options['stopwords'] and word in stopwords:
