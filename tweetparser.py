@@ -101,8 +101,8 @@ def _get_unigrams(text):
     words = re_words.findall(text)
     
     if options['replace_slang']:
-        slang_words = [w for w in words if w in slang]
-        words = [w for w in words if w not in slang_words]
+        slang_words = [w.lower() for w in words if w.lower() in slang]
+        words = [w for w in words if w.lower() not in slang_words]
         for s in slang_words:
             words.extend(slang[s].split())
     
