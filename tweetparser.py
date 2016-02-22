@@ -61,19 +61,21 @@ re_str_emoticon = r'''
       [<>]?
     )'''
 
-re_str_words = r'''
+re_str_words_meta = r'''
     (?:@[\w]+)                     # Usernames
     |
     (?:\#+[\w]+[\w\'\-]*[\w]+)     # Hashtags
     |
     (?:https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,}) # URLs
-    |
+    '''
+re_str_words = r'''
     (?:[a-z][a-z'\-_]+[a-z])       # Words with apostrophes or dashes.
     |
     (?:[+\-]?\d+[,/.:-]\d+[+\-]?)  # Numbers, including fractions, decimals.
     |
     (?:[\w]+)                      # Words without apostrophes or dashes.
-    |
+    '''
+re_str_words_etc = r'''
     (?:\.(?:\s*\.){1,})            # Ellipsis dots. 
     |
     (?:\S)                         # Everything else that isn't whitespace.
@@ -91,8 +93,9 @@ re_str_negation = r'''
 
 re_emoji = re.compile(re_str_emoji, re.UNICODE)
 re_emoticon = re.compile(re_str_emoticon, re.VERBOSE | re.I | re.UNICODE)
-re_words = re.compile(re_str_emoticon + '|' + re_str_words, \
+re_words = re.compile(re_str_emoticon + '|' + re_str_words_meta + '|' + re_str_words + '|' + re_str_words_etc, \
                       re.VERBOSE | re.I | re.UNICODE)
+re_words_only = re.compile(re_str_words, re.VERBOSE | re.I | re.UNICODE)
 re_repeat_char = re.compile(r'(.)\1+')
 re_negation = re.compile(re_str_negation, re.VERBOSE)
 re_clause_punctuation = re.compile('^[.:;!?]$')
@@ -137,7 +140,7 @@ def _process_word(word):
     return [word]
 
 def _negate_range(words, start, end):
-    negation = map(lambda w: NEGATION + w, words[start:end])
+    negation = map(lambda w: NEGATION + w if re_words_only.match(w) else w, words[start:end])
     return words[:start] + negation + words[end:]
 
 def _handle_negation(words):
@@ -192,7 +195,6 @@ def _parse_text(tweet):
     
     # process each unigram
     rtweet = []
-    rtweet.extend(emoji)
     
     for word in words:
         rtweet.extend(_process_word(word))
@@ -206,6 +208,8 @@ def _parse_text(tweet):
     if options['escape_special']:
         rtweet = map(_escape_special, rtweet)
     # rtweet = remove punctuation?
+    
+    rtweet.extend(emoji)
     
     return rtweet
 
