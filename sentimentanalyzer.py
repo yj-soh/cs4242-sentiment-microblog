@@ -59,7 +59,7 @@ class SentimentAnalyzer:
         print 'Building features...'
         # build features for training data
         training_labels = read_labels(TRAINING)
-        training_tweets = training_tweets = pickle.load(open(TRAINING_TWEETS, 'rb'))
+        training_tweets = pickle.load(open(TRAINING_TWEETS, 'rb'))
         unigram_features = buildfeatures.build_unigram_feature_dict(training_tweets, training_labels)
 
         training_data = buildfeatures.get_feature_vectors(training_tweets, unigram_features)
@@ -103,6 +103,34 @@ class SentimentAnalyzer:
         print 'Predicting labels...'
         print 'Development Results: ' + str(self.classifier.predict_testing_data(development_tweets, development_data, development_topics, development_labels, RESULTS_FILE))
 
+    def classify_custom_tweets(self, custom_filename):
+        if not os.path.exists(custom_filename):
+            print 'The file ' + custom_filename + ' does not exist.'
+            return
+
+        try:
+            print 'Parsing tweets...'
+            custom_tweets = []
+            def collect(tweet):
+                custom_tweets.append(tweet)
+            tweetparser._parse_tweets(custom_filename, collect)
+            labels = read_labels(custom_filename)
+            topics = read_topics(custom_filename)
+
+            print 'Building features...'
+            unigram_features = pickle.load(open(UNIGRAM_FEATURES_FILE, 'rb'))
+            data = buildfeatures.get_feature_vectors(custom_tweets, unigram_features)
+
+            print 'Predicting labels...'
+            labels = read_labels(custom_filename)
+            topics = read_topics(custom_filename)
+            print 'Results: ' + str(self.classifier.predict_testing_data(custom_tweets, data, topics, labels, RESULTS_FILE))
+            print 'See labels at: ' + RESULTS_FILE
+        except:
+            print 'Something went wrong. File may be in wrong format.'
+
+
+
     def adjust_parser(self):
         length = len(self.parser_options)
         option = 0
@@ -143,3 +171,8 @@ if __name__ == '__main__':
         elif option == 4:
             sentimentAnalyzer.adjust_parser()
             print 'Parser options updated!'
+        elif option == 5:
+            # sample format: data/testing.csv
+            custom_file = raw_input('Input path to custom tweets file: ')
+            sentimentAnalyzer.classify_custom_tweets(custom_file)
+

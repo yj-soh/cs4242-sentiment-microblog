@@ -4,16 +4,13 @@ import reader
 import numpy as np
 import os.path
 import pickle
-import random
 
 from nltk.tag import pos_tag
 from nltk.stem import WordNetLemmatizer
 from sklearn.svm import SVR
-from sklearn import preprocessing
 from sklearn.feature_selection import chi2
 from sklearn.feature_selection import SelectPercentile
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.feature_selection import RFE
 from sklearn.feature_selection import SelectFpr
 from sklearn.feature_selection import f_classif
 from sklearn.ensemble import ExtraTreesClassifier
