@@ -32,6 +32,16 @@ def read_labels(filename):
 
     return labels
 
+def read_topics(filename):
+    topics = []
+    with open(filename) as csvfile:
+        reader = csv.reader(csvfile)
+        reader.next() # skip header
+        for row in reader:
+            topics.append(row[0])
+
+    return topics
+
 class SentimentAnalyzer:
     def __init__(self):
         self.parser_options = tweetparser.options
@@ -79,17 +89,19 @@ class SentimentAnalyzer:
         testing_tweets = pickle.load(open(TESTING_TWEETS, 'rb'))
         testing_data = np.loadtxt(TESTING_DATA_FILE, delimiter=',')
         testing_labels = read_labels(TESTING)
+        testing_topics = read_topics(TESTING)
 
         print 'Predicting labels...'
-        print 'Testing Results: ' + str(self.classifier.predict_testing_data(testing_tweets, testing_data, testing_labels, RESULTS_FILE))
+        print 'Testing Results: ' + str(self.classifier.predict_testing_data(testing_tweets, testing_data, testing_topics, testing_labels, RESULTS_FILE))
 
     def classify_development_tweets(self):
         development_tweets = pickle.load(open(DEVELOPMENT_TWEETS, 'rb'))
         development_data = np.loadtxt(DEVELOPMENT_DATA_FILE, delimiter=',')
         development_labels = read_labels(DEVELOPMENT)
+        development_topics = read_topics(DEVELOPMENT)
 
         print 'Predicting labels...'
-        print 'Development Results: ' + str(self.classifier.predict_testing_data(development_tweets, development_data, development_labels, RESULTS_FILE))
+        print 'Development Results: ' + str(self.classifier.predict_testing_data(development_tweets, development_data, development_topics, development_labels, RESULTS_FILE))
 
     def adjust_parser(self):
         length = len(self.parser_options)

@@ -41,12 +41,12 @@ class Classifier:
         self.classifier = pickle.load(open(filename, 'rb'))
 
     # saves overall results in results_file. Returns [recall, precision, F1]
-    def predict_testing_data(self, testing_tweets, testing_data, testing_labels, results_file):
+    def predict_testing_data(self, testing_tweets, testing_data, testing_topics, testing_labels, results_file):
         result_labels = self.classifier.predict(testing_data)
         csv_writer = csv.writer(open(results_file, 'wb'))
         csv_writer.writerow(['Topic', 'Sentiment', 'TwitterText'])
         for index, label in enumerate(result_labels):
-            csv_writer.writerow([label, testing_tweets[index]['text'].encode('utf8')])
+            csv_writer.writerow([testing_topics[index], label, testing_tweets[index]['text'].encode('utf8')])
 
         precision = metrics.precision_score(testing_labels, result_labels, average='macro')
         recall = metrics.recall_score(testing_labels, result_labels, average='macro')

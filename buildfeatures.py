@@ -191,7 +191,7 @@ def get_feature_vectors(tweets, unigram_feature_dict):
     pos_tagger = POSTagger()
     sentiment_scorer = SentimentScorer()
     sentiment_scores = np.zeros((len(tweets), 1))
-    social_features = np.zeros((len(tweets), 3)) # rt_count, fav_count, mention_count
+    social_features = np.zeros((len(tweets), 4)) # rt_count, fav_count, mention_count, friend_count
 
     tag_count_features = list()
 
@@ -207,7 +207,7 @@ def get_feature_vectors(tweets, unigram_feature_dict):
 
         # social features
         social_features[index, 0] = tweet['rt_count']
-        social_features[index, 1] = tweet['fav_count']
+        # social_features[index, 1] = tweet['fav_count']
         social_features[index, 2] = len(tweet['users'])
 
         tag_count = pos_tagger.tag(tweet_unigrams)
