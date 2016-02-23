@@ -48,11 +48,12 @@ class Classifier:
         for index, label in enumerate(result_labels):
             csv_writer.writerow([testing_topics[index], label, testing_tweets[index]['text'].encode('utf8')])
 
+        accuracy = metrics.accuracy_score(testing_labels, result_labels)
         precision = metrics.precision_score(testing_labels, result_labels, average='macro')
         recall = metrics.recall_score(testing_labels, result_labels, average='macro')
         f1 = metrics.f1_score(testing_labels, result_labels, average='macro')
 
-        return {'recall': recall, 'precision': precision, 'F1': f1}
+        return {'accuracy': accuracy, 'recall': recall, 'precision': precision, 'F1': f1}
 
     def predict(self, testing_data):
         result_labels = self.classifier.predict(testing_data)
