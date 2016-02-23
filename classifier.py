@@ -19,16 +19,17 @@ RESULTS_FILE = 'data/generated/results.csv'
 
 class Classifier:
     def __init__(self):
-        # {'recall': 0.66452140497559475, 'precision': 0.69705655218910723, 'F1': 0.67857497717157655}
-        self.classifier = LinearSVC(class_weight='auto')
-
-        # {'recall': 0.60981487119929356, 'precision': 0.61804837692264081, 'F1': 0.61289175026667586}
-        # self.classifier = GaussianNB()
         
-        # {'recall': 0.52133906999012491, 'precision': 0.74365097295907634, 'F1': 0.54587294497124295}
+        # {'recall': 0.66512708133668053, 'precision': 0.71939463882993837, 'F1': 0.68568062271511643}
+        self.classifier = LinearSVC(class_weight='auto')
+        
+        # {'recall': 0.60011728328447156, 'precision': 0.60452209108905675, 'F1': 0.60098957336006997}
+        # self.classifier = GaussianNB()
+
+        # {'recall': 0.52459268280775861, 'precision': 0.74282309921659195, 'F1': 0.54471600331876879}
         # self.classifier = RandomForestClassifier()
 
-        # self.classifier = KNeighborsClassifier(20) # lousy one
+        # self.classifier = KNeighborsClassifier(10) # lousy one
 
     def train(self, training_data, training_labels):
         self.classifier.fit(training_data, training_labels)
@@ -43,8 +44,9 @@ class Classifier:
     def predict_testing_data(self, testing_tweets, testing_data, testing_labels, results_file):
         result_labels = self.classifier.predict(testing_data)
         csv_writer = csv.writer(open(results_file, 'wb'))
+        csv_writer.writerow(['Topic', 'Sentiment', 'TwitterText'])
         for index, label in enumerate(result_labels):
-            csv_writer.writerow([testing_tweets[index]['text'].encode('utf8'), label])
+            csv_writer.writerow([label, testing_tweets[index]['text'].encode('utf8')])
 
         precision = metrics.precision_score(testing_labels, result_labels, average='macro')
         recall = metrics.recall_score(testing_labels, result_labels, average='macro')

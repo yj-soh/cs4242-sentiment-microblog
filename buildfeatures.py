@@ -7,6 +7,8 @@ import pickle
 
 from nltk.tag import pos_tag
 from nltk.stem import WordNetLemmatizer
+from sklearn.feature_selection import chi2
+from sklearn.feature_selection import SelectPercentile
 
 NEGATION = 'not_'
 ADVERB_TAGS = ['RB', 'RBR', 'RBS', 'WRB']
@@ -115,23 +117,55 @@ class POSTagger:
 
         return tag_count
 
+# build unigram feature dictionary, format: (key = word/feature, value = index of feature)
+# do feature selection
+def build_unigram_feature_dict(tweets, tweet_labels):
+    unigram_feature_dict = dict()
+    all_unigram_features = []
+    count_features = 0
+    # process unigram features
+    for index, tweet in enumerate(tweets):
+        for word in tweet['unigrams']:
+            if (word not in unigram_feature_dict):
+                count_features += 1
+                unigram_feature_dict[word] = count_features - 1
+                all_unigram_features.append(word)
+
+    unigram_feature_vectors = np.zeros((len(tweets), len(unigram_feature_dict)))
+
+    for index, tweet in enumerate(tweets):
+        tweet_unigrams = tweet['unigrams']
+        for word in tweet_unigrams:
+            if (word in unigram_feature_dict):
+                unigram_feature_vectors[index, unigram_feature_dict[word]] += 1
+
+    # select features using chi2
+    select = SelectPercentile(chi2, percentile=80)
+    select.fit(unigram_feature_vectors, tweet_labels)
+    selected_features = select.get_support()
+
+    # TODO: try other feature selection
+
+    # remove unwanted features
+    for index, is_feature_selected in reversed(list(enumerate(selected_features))):
+        if (not is_feature_selected):
+            del all_unigram_features[index]
+
+    # create new dictionary based on selected features
+    unigram_feature_dict = dict()
+    for index, unigram in enumerate(all_unigram_features):
+        unigram_feature_dict[unigram] = index
+    
+    return unigram_feature_dict
+
 # unigram_feature_dict in this format: (key = word/feature, value = index of feature)
-def get_feature_vectors(tweets, unigram_feature_dict = dict()):
+def get_feature_vectors(tweets, unigram_feature_dict):
     pos_tagger = POSTagger()
     sentiment_scorer = SentimentScorer()
     sentiment_scores = np.zeros((len(tweets), 1))
     social_features = np.zeros((len(tweets), 3)) # rt_count, fav_count, mention_count
 
     tag_count_features = list()
-    count_features = 0
-
-    if (len(unigram_feature_dict) == 0):
-        # process unigram features
-        for index, tweet in enumerate(tweets):
-            for word in tweet['unigrams']:
-                if (word not in unigram_feature_dict):
-                    count_features += 1
-                    unigram_feature_dict[word] = count_features - 1
 
     unigram_feature_vectors = np.zeros((len(tweets), len(unigram_feature_dict)))
     
@@ -139,8 +173,11 @@ def get_feature_vectors(tweets, unigram_feature_dict = dict()):
         tweet_unigrams = tweet['unigrams']
         # put sentiment score in first column
         sentiment_scores[index, 0] = sentiment_scorer.get_sentiment_score(tweet_unigrams)
+
         # put date time in first column
         # date_time_values[index, 0] = tweet['datetime']/60/60/24 # just get the day
+
+        # social features
         social_features[index, 0] = tweet['rt_count']
         social_features[index, 1] = tweet['fav_count']
         social_features[index, 2] = len(tweet['users'])
@@ -157,16 +194,10 @@ def get_feature_vectors(tweets, unigram_feature_dict = dict()):
             if (word in unigram_feature_dict):
                 unigram_feature_vectors[index, unigram_feature_dict[word]] = 1 # term presence
 
-    return unigram_feature_dict, np.concatenate((social_features, sentiment_scores, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
+    return np.concatenate((sentiment_scores, social_features, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
             
 if __name__ == '__main__':
     tweets = [
-        {'fav_count': 2, 'rt_count': 3, 'unigrams': [':D', 'i', 'love', 'apple'], 'datetime': 1318693827.0}, 
-        {'fav_count': 2, 'rt_count': 3, 'unigrams': ['apple', 'is', 'my', 'love'], 'datetime': 1318693827.0}, 
-        {'fav_count': 2, 'rt_count': 3, 'unigrams': ['apple', 'is', 'not', 'not_my', 'not_love'], 'datetime': 1318693827.0}, 
-        {'fav_count': 2, 'rt_count': 3, 'unigrams': ['love'], 'datetime': 1318693827.0}, 
-        {'fav_count': 2, 'rt_count': 3, 'unigrams': ['hate', 'hate', 'hate', 'apple'], 'datetime': 1318693827.0}
+        {'users': [u'17739746', u'380749300', None], 'rt_count': 0, 'text': u'Good support fm Kevin @apple #Bellevue store 4 biz customers TY!', 'datetime': 1318668623.0, 'unigrams': ['good', 'support', 'kevin', '@apple', 'bellevue', 'store', 'customer', '!', 'fuck', 'business', 'thank'], 'fav_count': 0}
     ]
-    _, data = get_feature_vectors(tweets)
-
-    print data
+    unigram_features = pickle.load(open(UNIGRAM_FEATURES_FILE, 'rb'))

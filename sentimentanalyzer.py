@@ -8,10 +8,16 @@ from classifier import Classifier
 
 TRAINING_DATA_FILE = 'data/generated/training_data.csv'
 TESTING_DATA_FILE = 'data/generated/testing_data.csv'
+DEVELOPMENT_DATA_FILE = 'data/generated/development_data.csv'
+
 TRAINING_TWEETS = 'data/generated/training_tweets.txt'
 TESTING_TWEETS = 'data/generated/testing_tweets.txt'
+DEVELOPMENT_TWEETS = 'data/generated/development_tweets.txt'
+
 TRAINING = 'data/training.csv'
 TESTING = 'data/testing.csv'
+DEVELOPMENT = 'data/development.csv'
+
 CLASSIFIER_FILE = 'data/generated/classifier.txt'
 UNIGRAM_FEATURES_FILE = 'data/generated/unigram_features.txt'
 RESULTS_FILE = 'results.csv'
@@ -42,23 +48,30 @@ class SentimentAnalyzer:
 
         print 'Building features...'
         # build features for training data
+        training_labels = read_labels(TRAINING)
         training_tweets = training_tweets = pickle.load(open(TRAINING_TWEETS, 'rb'))
-        unigram_features, training_data = buildfeatures.get_feature_vectors(training_tweets, dict())
+        unigram_features = buildfeatures.build_unigram_feature_dict(training_tweets, training_labels)
+
+        training_data = buildfeatures.get_feature_vectors(training_tweets, unigram_features)
 
         # save training data
         np.savetxt(TRAINING_DATA_FILE, training_data, delimiter=',')
 
         # build features for testing data
         testing_tweets = pickle.load(open(TESTING_TWEETS, 'rb'))
-        _, testing_data = buildfeatures.get_feature_vectors(testing_tweets, unigram_features)
+        testing_data = buildfeatures.get_feature_vectors(testing_tweets, unigram_features)
         np.savetxt(TESTING_DATA_FILE, testing_data, delimiter=',')
+
+        # build features for development data
+        development_tweets = pickle.load(open(DEVELOPMENT_TWEETS, 'rb'))
+        development_data = buildfeatures.get_feature_vectors(development_tweets, unigram_features)
+        np.savetxt(DEVELOPMENT_DATA_FILE, development_data, delimiter=',')
 
         # save unigram features processed
         pickle.dump(unigram_features, open(UNIGRAM_FEATURES_FILE, 'wb'), -1)
 
-        training_labels = read_labels(TRAINING)
-
         print 'Training classifier...'
+        self.classifier = Classifier()
         self.classifier.train(training_data, training_labels)
         self.classifier.save_classifier(CLASSIFIER_FILE)
 
@@ -69,6 +82,14 @@ class SentimentAnalyzer:
 
         print 'Predicting labels...'
         print 'Results: ' + str(self.classifier.predict_testing_data(testing_tweets, testing_data, testing_labels, RESULTS_FILE))
+
+    def classify_development_tweets(self):
+        development_tweets = pickle.load(open(DEVELOPMENT_TWEETS, 'rb'))
+        development_data = np.loadtxt(DEVELOPMENT_DATA_FILE, delimiter=',')
+        development_labels = read_labels(DEVELOPMENT)
+
+        print 'Predicting labels...'
+        print 'Results: ' + str(self.classifier.predict_testing_data(development_tweets, development_data, development_labels, RESULTS_FILE))
 
     def adjust_parser(self):
         length = len(self.parser_options)
@@ -92,8 +113,8 @@ if __name__ == '__main__':
     sentimentAnalyzer = SentimentAnalyzer()
 
     option = 0
-    while option != 5:
-        option = input('What do you want to do?\n1. Retrain Classifier\n2. Classify Test Tweets\n3. Adjust Parser Options\n4. Classify Custom Tweets\n5. Goodbye\nAnswer: ')
+    while option != 6:
+        option = input('What do you want to do?\n1. Retrain Classifier\n2. Classify Test Tweets\n3. Classify Development Tweets\n4. Adjust Parser Options\n5. Classify Custom Tweets\n6. Goodbye\nAnswer: ')
 
         if option == 1:
             print 'Please wait...'
@@ -104,5 +125,9 @@ if __name__ == '__main__':
             sentimentAnalyzer.classify_test_tweets()
             print 'See labels at: ' + RESULTS_FILE
         elif option == 3:
+            print 'Please wait...'
+            sentimentAnalyzer.classify_development_tweets()
+            print 'See labels at: ' + RESULTS_FILE
+        elif option == 4:
             sentimentAnalyzer.adjust_parser()
             print 'Parser options updated!'
