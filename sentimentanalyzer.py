@@ -81,7 +81,7 @@ class SentimentAnalyzer:
         testing_labels = read_labels(TESTING)
 
         print 'Predicting labels...'
-        print 'Results: ' + str(self.classifier.predict_testing_data(testing_tweets, testing_data, testing_labels, RESULTS_FILE))
+        print 'Testing Results: ' + str(self.classifier.predict_testing_data(testing_tweets, testing_data, testing_labels, RESULTS_FILE))
 
     def classify_development_tweets(self):
         development_tweets = pickle.load(open(DEVELOPMENT_TWEETS, 'rb'))
@@ -89,7 +89,7 @@ class SentimentAnalyzer:
         development_labels = read_labels(DEVELOPMENT)
 
         print 'Predicting labels...'
-        print 'Results: ' + str(self.classifier.predict_testing_data(development_tweets, development_data, development_labels, RESULTS_FILE))
+        print 'Development Results: ' + str(self.classifier.predict_testing_data(development_tweets, development_data, development_labels, RESULTS_FILE))
 
     def adjust_parser(self):
         length = len(self.parser_options)

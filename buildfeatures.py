@@ -4,11 +4,19 @@ import reader
 import numpy as np
 import os.path
 import pickle
+import random
 
 from nltk.tag import pos_tag
 from nltk.stem import WordNetLemmatizer
+from sklearn.svm import SVR
+from sklearn import preprocessing
 from sklearn.feature_selection import chi2
 from sklearn.feature_selection import SelectPercentile
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.feature_selection import RFE
+from sklearn.feature_selection import SelectFpr
+from sklearn.feature_selection import f_classif
+from sklearn.ensemble import ExtraTreesClassifier
 
 NEGATION = 'not_'
 ADVERB_TAGS = ['RB', 'RBR', 'RBS', 'WRB']
@@ -144,7 +152,27 @@ def build_unigram_feature_dict(tweets, tweet_labels):
     select.fit(unigram_feature_vectors, tweet_labels)
     selected_features = select.get_support()
 
-    # TODO: try other feature selection
+    # select features using variance (not that good)
+    # select = VarianceThreshold(threshold=0.0001)
+    # select.fit(unigram_feature_vectors, tweet_labels)
+    # selected_features = select.get_support()
+
+    # select features using ANOVA F value
+    # select = SelectFpr(f_classif, alpha=0.75)
+    # select.fit(unigram_feature_vectors, tweet_labels)
+    # selected_features = select.get_support()
+
+    # select features using ExtraTreesClassifier (can be best but not deterministic)
+    # np.random.seed(3597475650) # set seed so that results always the same
+    # forest = ExtraTreesClassifier()
+    # forest.fit(unigram_feature_vectors, tweet_labels)
+    # index = np.arange(0, unigram_feature_vectors.shape[1]) # create an index array, with the number of features
+    # threshold_index = len(forest.feature_importances_) * 0.65
+    # threshold = np.partition(forest.feature_importances_, threshold_index)[threshold_index]
+    # # threshold = np.mean(np.percentile(forest.feature_importances_, 70, axis=0)) # anyhow
+    # selected_features_indexes = index[forest.feature_importances_ > threshold]
+    # selected_features = np.zeros((unigram_feature_vectors.shape[1]), dtype=bool)
+    # selected_features[selected_features_indexes] = True
 
     # remove unwanted features
     for index, is_feature_selected in reversed(list(enumerate(selected_features))):
