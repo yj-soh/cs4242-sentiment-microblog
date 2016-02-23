@@ -126,6 +126,7 @@ class POSTagger:
 # do feature selection
 def build_unigram_feature_dict(tweets, tweet_labels):
     unigram_feature_dict = dict()
+    unigram_frequencies = dict() # count number of occurrences for particular unigram
     all_unigram_features = []
     count_features = 0
     # process unigram features
@@ -134,6 +135,7 @@ def build_unigram_feature_dict(tweets, tweet_labels):
             if (word not in unigram_feature_dict):
                 count_features += 1
                 unigram_feature_dict[word] = count_features - 1
+                unigram_frequencies[word] = 0
                 all_unigram_features.append(word)
 
     unigram_feature_vectors = np.zeros((len(tweets), len(unigram_feature_dict)))
@@ -142,6 +144,7 @@ def build_unigram_feature_dict(tweets, tweet_labels):
         tweet_unigrams = tweet['unigrams']
         for word in tweet_unigrams:
             if (word in unigram_feature_dict):
+                unigram_frequencies[word] += 1
                 unigram_feature_vectors[index, unigram_feature_dict[word]] += 1
 
     # select features using chi2
@@ -170,6 +173,14 @@ def build_unigram_feature_dict(tweets, tweet_labels):
     # selected_features_indexes = index[forest.feature_importances_ > threshold]
     # selected_features = np.zeros((unigram_feature_vectors.shape[1]), dtype=bool)
     # selected_features[selected_features_indexes] = True
+
+    # select features that occur more than once
+    # selected_features = []
+    # for unigram in all_unigram_features:
+    #     if (unigram_frequencies[unigram] > 1):
+    #         selected_features.append(True)
+    #     else:
+    #         selected_features.append(False)
 
     # remove unwanted features
     for index, is_feature_selected in reversed(list(enumerate(selected_features))):
