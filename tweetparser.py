@@ -15,7 +15,7 @@ FILES = {
     },
     'development': {
         'in': 'data/development.csv',
-        'out': 'data/generated/development_weets.txt'
+        'out': 'data/generated/development_tweets.txt'
     },
     'testing': {
         'in': 'data/testing.csv',
@@ -262,7 +262,7 @@ def _parse_tweets(tweets_csv, f):
         f(tweet)
 
 def parse_all_files(new_options=options):
-    files = [FILES['training'], FILES['testing']]
+    files = [FILES['training'], FILES['testing'], FILES['development']]
     
     options = new_options
     
