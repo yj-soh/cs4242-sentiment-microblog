@@ -52,7 +52,7 @@ class SentimentAnalyzer:
         else:
             self.retrain_classifier()
 
-    def retrain_classifier(self):
+    def rebuild_features(self):
         print 'Parsing tweets...'
         tweetparser.parse_all_files(self.parser_options)
 
@@ -64,7 +64,7 @@ class SentimentAnalyzer:
 
         training_data = buildfeatures.get_feature_vectors(training_tweets, unigram_features)
 
-        # save training data
+         # save training data
         np.savetxt(TRAINING_DATA_FILE, training_data, delimiter=',')
 
         # build features for testing data
@@ -79,6 +79,13 @@ class SentimentAnalyzer:
 
         # save unigram features processed
         pickle.dump(unigram_features, open(UNIGRAM_FEATURES_FILE, 'wb'), -1)
+
+
+    def retrain_classifier(self):
+        if not os.path.exists(TRAINING_DATA_FILE):
+            self.rebuild_features()
+        training_data = np.loadtxt(TRAINING_DATA_FILE, delimiter=',')
+        training_labels = read_labels(TRAINING)
 
         print 'Training classifier...'
         self.classifier = Classifier()
@@ -153,25 +160,29 @@ if __name__ == '__main__':
     sentimentAnalyzer = SentimentAnalyzer()
 
     option = 0
-    while option != 6:
-        option = input('What do you want to do?\n1. Retrain Classifier\n2. Classify Test Tweets\n3. Classify Development Tweets\n4. Adjust Parser Options\n5. Classify Custom Tweets\n6. Goodbye\nAnswer: ')
+    while option != 7:
+        option = input('What do you want to do?\n1. Rebuild Features\n2. Retrain Classifier\n3. Classify Test Tweets\n4. Classify Development Tweets\n5. Adjust Parser Options\n6. Classify Custom Tweets\n7. Goodbye\nAnswer: ')
 
         if option == 1:
             print 'Please wait...'
+            sentimentAnalyzer.rebuild_features()
+            print 'Features built!'
+        elif option == 2:
+            print 'Please wait...'
             sentimentAnalyzer.retrain_classifier()
             print 'Classifier trained!'
-        elif option == 2:
+        elif option == 3:
             print 'Please wait...'
             sentimentAnalyzer.classify_test_tweets()
             print 'See labels at: ' + RESULTS_FILE
-        elif option == 3:
+        elif option == 4:
             print 'Please wait...'
             sentimentAnalyzer.classify_development_tweets()
             print 'See labels at: ' + RESULTS_FILE
-        elif option == 4:
+        elif option == 5:
             sentimentAnalyzer.adjust_parser()
             print 'Parser options updated!'
-        elif option == 5:
+        elif option == 6:
             # sample format: data/testing.csv
             custom_file = raw_input('Input path to custom tweets file: ')
             sentimentAnalyzer.classify_custom_tweets(custom_file)
