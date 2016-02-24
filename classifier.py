@@ -21,7 +21,7 @@ class Classifier:
     def __init__(self):
         
         # {'recall': 0.66512708133668053, 'precision': 0.71939463882993837, 'F1': 0.68568062271511643}
-        self.classifier = LinearSVC(class_weight='auto')
+        self.classifier = LinearSVC(class_weight='auto', C=0.1)
         
         # {'recall': 0.60011728328447156, 'precision': 0.60452209108905675, 'F1': 0.60098957336006997}
         # self.classifier = GaussianNB()
@@ -29,7 +29,7 @@ class Classifier:
         # {'recall': 0.52459268280775861, 'precision': 0.74282309921659195, 'F1': 0.54471600331876879}
         # self.classifier = RandomForestClassifier()
 
-        # self.classifier = KNeighborsClassifier(10) # lousy one
+        # self.classifier = KNeighborsClassifier(100) # lousy one
 
     def train(self, training_data, training_labels):
         self.classifier.fit(training_data, training_labels)
