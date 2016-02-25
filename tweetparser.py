@@ -2,6 +2,7 @@ import HTMLParser
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from nltk.tag import pos_tag
 import pickle
 import re
 from time import mktime, strptime
@@ -36,7 +37,13 @@ options = {
 NEGATION = 'not_'
 DATE_FMT = '%a %b %d %H:%M:%S +0000 %Y'
 
+ADVERB_TAGS = ['RB', 'RBR', 'RBS', 'WRB']
+NOUN_TAGS = ['NN', 'NNS', 'NNP', 'NNPS', 'PRP', 'WP']
+ADJECTIVE_TAGS = ['JJ', 'JJR', 'JJS']
+VERB_TAGS = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
+
 html_parser = HTMLParser.HTMLParser()
+pos_tagger = nltk.tag.perceptron.PerceptronTagger()
 lemmatizer = WordNetLemmatizer()
 stopwords = map(lambda s:str(s), stopwords.words('english'))
 slang = reader.read_tsv_map('resources/noslang.csv')
@@ -112,9 +119,21 @@ def _get_unigrams(text):
                 new_words.append(w)
         words = new_words
     
-    return words
+    tagged_words = nltk.tag._pos_tag(words, None, pos_tagger)
+    
+    return tagged_words
 
-def _process_word(word):
+def _get_tag_type(tag):
+    if tag in ADVERB_TAGS:
+        return 'r'
+    elif tag in ADJECTIVE_TAGS:
+        return 'a'
+    elif tag in VERB_TAGS:
+        return 'v'
+    else:
+        return 'n'
+
+def _process_word(word, tag):
     # if is emoticon
     if re_emoticon.search(word):
         return word
@@ -136,7 +155,7 @@ def _process_word(word):
     # todo: English contractions
     if options['lemma']:
         try:
-            word = str(lemmatizer.lemmatize(word))
+            word = str(lemmatizer.lemmatize(word, _get_tag_type(tag)))
         except UnicodeDecodeError:
             pass
     
@@ -194,27 +213,34 @@ def _parse_text(tweet):
     tweet = tweet.encode('utf8')
     
     # split into unigrams
-    words = _get_unigrams(tweet)
+    tagged_words = _get_unigrams(tweet)
     
     # process each unigram
     rtweet = []
     
-    for word in words:
-        rtweet.append(_process_word(word))
+    for tagged_word in tagged_words:
+        word, tag = tagged_word
+        word = _process_word(word, tag)
+        if word:
+            rtweet.append((word, tag))
     
-    # remove empty strings
-    rtweet = filter(None, rtweet)
-
+    # unpack for words-only processing
+    words = [w[0] for w in rtweet]
+    tags = [w[1] for w in rtweet]
+    
     # after-splitting operations
     if options['negation']:
-        rtweet = _handle_negation(rtweet)
+        words = _handle_negation(words)
     if options['escape_special']:
-        rtweet = map(_escape_special, rtweet)
+        words = map(_escape_special, words)
     # rtweet = remove punctuation?
     
-    rtweet.extend(emoji)
+    # repack into tuples
+    rtweet = zip(words, tags)
     
-    return rtweet
+    rtweet.extend((e, 'NN') for e in emoji)
+    
+    return [w[0] for w in rtweet], rtweet
 
 def _parse_datetime(date_str):
     return mktime(strptime(date_str, DATE_FMT))
@@ -236,6 +262,7 @@ def _parse_tweets(tweets_csv, f):
     format of each tweet: {
       text: string, original text of tweet msg,
       unigrams: string[], relevant bits of tweet msg,
+      tagged_unigrams: string[], relevant bits of tweet msg, POS-tagged,
       datetime: float, created date of tweet in Unix time,
       users: string[], user ids of relevant users,
       rt_count: int, no. of times retweeted,
@@ -247,7 +274,7 @@ def _parse_tweets(tweets_csv, f):
         
         # text
         tweet['text'] = json['text']
-        tweet['unigrams'] = _parse_text(json['text'])
+        tweet['unigrams'], tweet['tagged_unigrams'] = _parse_text(json['text'])
         
         # datetime
         tweet['datetime'] = _parse_datetime(json['created_at'])
