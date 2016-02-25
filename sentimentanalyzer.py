@@ -5,6 +5,7 @@ import csv
 import buildfeatures
 import tweetparser
 from classifier import Classifier
+from sklearn import cross_validation
 
 TRAINING_DATA_FILE = 'data/generated/training_data.csv'
 TESTING_DATA_FILE = 'data/generated/testing_data.csv'
@@ -136,7 +137,14 @@ class SentimentAnalyzer:
         except:
             print 'Something went wrong. File may be in wrong format.'
 
+    def cross_validation(self):
+        training_data = np.loadtxt(TRAINING_DATA_FILE, delimiter=',')
+        training_labels = read_labels(TRAINING)
 
+        raw_classifier = self.classifier.get_classifier()
+        kf_total = cross_validation.KFold(len(training_labels), n_folds=10, shuffle=True, random_state=4)
+
+        print 'Average F1-Score: ' + str(np.average(cross_validation.cross_val_score(raw_classifier, training_data, training_labels, cv=kf_total, n_jobs=1, scoring='f1_weighted')))
 
     def adjust_parser(self):
         length = len(self.parser_options)
@@ -160,8 +168,8 @@ if __name__ == '__main__':
     sentimentAnalyzer = SentimentAnalyzer()
 
     option = 0
-    while option != 7:
-        option = input('What do you want to do?\n1. Rebuild Features\n2. Retrain Classifier\n3. Classify Test Tweets\n4. Classify Development Tweets\n5. Adjust Parser Options\n6. Classify Custom Tweets\n7. Goodbye\nAnswer: ')
+    while option != 8:
+        option = input('What do you want to do?\n1. Rebuild Features\n2. Retrain Classifier\n3. Classify Test Tweets\n4. Classify Development Tweets\n5. Adjust Parser Options\n6. Classify Custom Tweets\n7. Cross Validate Training Tweets\n8. Goodbye\nAnswer: ')
 
         if option == 1:
             print 'Please wait...'
@@ -185,5 +193,9 @@ if __name__ == '__main__':
         elif option == 6:
             # sample format: data/testing.csv
             custom_file = raw_input('Input path to custom tweets file: ')
+            print 'Please wait...'
             sentimentAnalyzer.classify_custom_tweets(custom_file)
+        elif option ==7:
+            print 'Please wait...'
+            sentimentAnalyzer.cross_validation()
 

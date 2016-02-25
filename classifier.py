@@ -34,6 +34,9 @@ class Classifier:
     def train(self, training_data, training_labels):
         self.classifier.fit(training_data, training_labels)
 
+    def get_classifier(self):
+        return self.classifier
+
     def save_classifier(self, filename):
         pickle.dump(self.classifier, open(filename, 'wb'))
 
