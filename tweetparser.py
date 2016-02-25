@@ -117,7 +117,7 @@ def _get_unigrams(text):
 def _process_word(word):
     # if is emoticon
     if re_emoticon.search(word):
-        return [word]
+        return word
     
     ### lower-case operations below ###
     if options['force_lowercase']:
@@ -129,7 +129,7 @@ def _process_word(word):
     
     # if is stopword
     if options['stopwords'] and word in stopwords:
-        return ['']
+        return ''
     
     if options['trim_repeat_char']:
         word = re_repeat_char.sub(r'\1\1', word)
@@ -140,7 +140,7 @@ def _process_word(word):
         except UnicodeDecodeError:
             pass
     
-    return [word]
+    return word
 
 def _negate_range(words, start, end):
     negation = map(lambda w: NEGATION + w if re_words_only.match(w) else w, words[start:end])
@@ -200,7 +200,7 @@ def _parse_text(tweet):
     rtweet = []
     
     for word in words:
-        rtweet.extend(_process_word(word))
+        rtweet.append(_process_word(word))
     
     # remove empty strings
     rtweet = filter(None, rtweet)
