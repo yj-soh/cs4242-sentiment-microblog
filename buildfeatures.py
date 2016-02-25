@@ -49,20 +49,12 @@ class SentimentScorer:
         txt_file = open('data/lexicon/neg.txt', 'r')
         for line in txt_file:
             word = line.strip()
-            try:
-                word = self.lemmatizer.lemmatize(word)
-            except UnicodeDecodeError:
-                pass
             self.neg_lexicon.add(word)
             self.pos_lexicon.add(NEGATION + word) # add negation to other lexicon set
 
         txt_file = open('data/lexicon/pos.txt', 'r')
         for line in txt_file:
             word = line.strip()
-            try:
-                word = self.lemmatizer.lemmatize(word)
-            except UnicodeDecodeError:
-                pass
             self.pos_lexicon.add(word)
             self.neg_lexicon.add(NEGATION + word)
 
