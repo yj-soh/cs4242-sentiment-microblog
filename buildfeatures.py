@@ -132,31 +132,31 @@ def build_unigram_feature_dict(tweets, tweet_labels):
                 unigram_feature_vectors[index, unigram_feature_dict[word]] += 1
 
     # select features using chi2
-    select = SelectPercentile(chi2, percentile=80)
-    select.fit(unigram_feature_vectors, tweet_labels)
-    selected_features = select.get_support()
+    # select = SelectPercentile(chi2, percentile=90)
+    # select.fit(unigram_feature_vectors, tweet_labels)
+    # selected_features = select.get_support()
 
     # select features using variance (not that good)
-    # select = VarianceThreshold(threshold=0.0001)
+    # select = VarianceThreshold(threshold=0.0004)
     # select.fit(unigram_feature_vectors, tweet_labels)
     # selected_features = select.get_support()
 
     # select features using ANOVA F value
-    # select = SelectFpr(f_classif, alpha=0.75)
+    # select = SelectFpr(f_classif, alpha=0.8)
     # select.fit(unigram_feature_vectors, tweet_labels)
     # selected_features = select.get_support()
 
     # select features using ExtraTreesClassifier (can be best but not deterministic)
-    # np.random.seed(3597475650) # set seed so that results always the same
-    # forest = ExtraTreesClassifier()
-    # forest.fit(unigram_feature_vectors, tweet_labels)
-    # index = np.arange(0, unigram_feature_vectors.shape[1]) # create an index array, with the number of features
-    # threshold_index = len(forest.feature_importances_) * 0.65
-    # threshold = np.partition(forest.feature_importances_, threshold_index)[threshold_index]
-    # # threshold = np.mean(np.percentile(forest.feature_importances_, 70, axis=0)) # anyhow
-    # selected_features_indexes = index[forest.feature_importances_ > threshold]
-    # selected_features = np.zeros((unigram_feature_vectors.shape[1]), dtype=bool)
-    # selected_features[selected_features_indexes] = True
+    np.random.seed(3597475650) # set seed so that results always the same
+    forest = ExtraTreesClassifier()
+    forest.fit(unigram_feature_vectors, tweet_labels)
+    index = np.arange(0, unigram_feature_vectors.shape[1]) # create an index array, with the number of features
+    threshold_index = len(forest.feature_importances_) * 0.65
+    threshold = np.partition(forest.feature_importances_, threshold_index)[threshold_index] # 9.31613045642e-06
+    # threshold = np.mean(np.percentile(forest.feature_importances_, 70, axis=0)) # anyhow
+    selected_features_indexes = index[forest.feature_importances_ > threshold]
+    selected_features = np.zeros((unigram_feature_vectors.shape[1]), dtype=bool)
+    selected_features[selected_features_indexes] = True
 
     # select features that occur more than once
     # selected_features = []
@@ -198,7 +198,7 @@ def get_feature_vectors(tweets, unigram_feature_dict):
         # date_time_values[index, 0] = tweet['datetime']/60/60/24 # just get the day
 
         # social features
-        social_features[index, 0] = tweet['rt_count']
+        # social_features[index, 0] = tweet['rt_count']
         # social_features[index, 1] = tweet['fav_count']
         social_features[index, 2] = len(tweet['users'])
 
@@ -215,7 +215,7 @@ def get_feature_vectors(tweets, unigram_feature_dict):
             if (word in unigram_feature_dict):
                 unigram_feature_vectors[index, unigram_feature_dict[word]] = 1 # term presence
 
-    return np.concatenate((sentiment_scores, social_features, unigram_feature_vectors, np.array(tag_count_features)), axis=1)
+    return np.concatenate((sentiment_scores, social_features, np.array(tag_count_features), unigram_feature_vectors), axis=1)
             
 if __name__ == '__main__':
     tweets = [
