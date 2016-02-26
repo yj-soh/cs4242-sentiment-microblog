@@ -27,7 +27,7 @@ class Classifier:
         # self.classifier = GaussianNB()
 
         # {'recall': 0.52459268280775861, 'precision': 0.74282309921659195, 'F1': 0.54471600331876879}
-        # self.classifier = RandomForestClassifier()
+        # self.classifier = RandomForestClassifier(n_estimators=50)
 
         # self.classifier = KNeighborsClassifier(100) # lousy one
 
