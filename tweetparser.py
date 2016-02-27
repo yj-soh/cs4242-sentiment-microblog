@@ -30,7 +30,7 @@ options = {
     'trim_repeat_char': True,
     'lemma': True,
     'negation': True,
-    'escape_special': True,
+    # 'escape_special': True,
     'replace_slang': True,
     'no_hash_hashtags': True
 }
@@ -48,10 +48,12 @@ lemmatizer = WordNetLemmatizer()
 stopwords = map(lambda s:str(s), stopwords.words('english'))
 slang = reader.read_tsv_map('resources/noslang.csv')
 slang = {k:v.lower() for k, v in slang.items()}
+'''
 escape_words = {
     '\'': '&#39;',
     '\"': '&quot;'
 }
+'''
 
 re_str_emoji = u'\ud83c[\udf00-\udfff]|\ud83d[\udc00-\ude4f\ude80-\udeff]|[\u2600-\u26FF\u2700-\u27BF]+'
 
@@ -192,10 +194,12 @@ def _handle_negation(words):
     
     return words
 
+'''
 def _escape_special(str):
     for c in escape_words:
         str = str.replace(c, escape_words[c])
     return str
+'''
 
 def extract_emoji(text):
     emoji = re_emoji.findall(text)
@@ -231,8 +235,10 @@ def _parse_text(tweet):
     # after-splitting operations
     if options['negation']:
         words = _handle_negation(words)
+    '''
     if options['escape_special']:
         words = map(_escape_special, words)
+    '''
     # rtweet = remove punctuation?
     
     # repack into tuples
