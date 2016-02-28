@@ -25,13 +25,13 @@ FILES = {
 }
 
 options = {
-    'stopwords': True,
+    'stopwords': False,
     'force_lowercase': True,
     'trim_repeat_char': True,
-    'lemma': True,
+    'lemma': False,
     'negation': True,
     # 'escape_special': True,
-    'replace_slang': True,
+    'replace_slang': False,
     'no_hash_hashtags': True
 }
 NEGATION = 'not_'
